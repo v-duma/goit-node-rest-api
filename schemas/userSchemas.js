@@ -16,8 +16,16 @@ const subscriptionSchema = Joi.object({
   subscription: Joi.string().valid("starter", "pro", "business"),
 });
 
+const verifEmailSchema = Joi.object({
+  email: Joi.string().email().required().messages({
+    "string.email": "Email must be a valid address",
+    "any.required": "Missing required email field",
+  }),
+});
+
 export const schemas = {
   registerSchema,
   loginSchema,
   subscriptionSchema,
+  verifEmailSchema,
 };

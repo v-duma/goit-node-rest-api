@@ -2,6 +2,7 @@ import express from "express";
 import { validateBody, validateJWT, upload } from "../middlewars/index.js";
 import { schemas } from "../schemas/userSchemas.js";
 import { userControllers } from "../controllers/auth.js";
+import { emailControllers } from "../controllers/email.js";
 
 const authRouter = express.Router();
 
@@ -19,6 +20,7 @@ authRouter.post(
 
 authRouter.get("/current", validateJWT, userControllers.getCurrent);
 authRouter.post("/logout", validateJWT, userControllers.logout);
+authRouter.get("/verify/:verificationToken", emailControllers.verifyEmail);
 
 authRouter.patch(
   "/",
@@ -32,6 +34,12 @@ authRouter.patch(
   validateJWT,
   upload.single("avatar"),
   userControllers.updateAvatar
+);
+
+authRouter.post(
+  "/verify",
+  validateBody(schemas.verifEmailSchema),
+  emailControllers.resendVerifyEmail
 );
 
 export default authRouter;
