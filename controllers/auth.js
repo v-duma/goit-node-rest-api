@@ -6,6 +6,8 @@ import gravatar from "gravatar";
 import path from "path";
 import fs from "fs/promises";
 import Jimp from "jimp";
+import crypto from "crypto";
+import { sendEmail } from "../helpers/index.js";
 
 const { SECRET_KEY } = process.env;
 
@@ -18,14 +20,28 @@ const register = async (req, res) => {
   }
 
   const avatarURL = gravatar.url(email);
-
   const hashPassword = await bcrypt.hash(password, 10);
+  const verificationToken = crypto.randomUUID();
 
   const newUser = await User.create({
     ...req.body,
     password: hashPassword,
     avatarURL,
+    verificationToken,
   });
+
+  const mail = {
+    to: email,
+    subject: "Verify email",
+    html: `<a target="_blank" href="http://localhost:3001/users/verify/${verificationToken}">Verify email</a>`,
+  };
+
+  try {
+    await sendEmail(mail);
+  } catch (error) {
+    return res.status(500).json(error.message);
+  }
+
   res.status(201).json({
     users: {
       email: newUser.email,
@@ -44,6 +60,12 @@ const login = async (req, res) => {
   const passwordCompare = await bcrypt.compare(password, user.password);
   if (!passwordCompare) {
     return res.status(401).json({ message: "Email or password is incorrect" });
+  }
+
+  if (!user.verify) {
+    return res
+      .status(401)
+      .json({ message: "Email not verified. Access denied" });
   }
 
   const payload = {
